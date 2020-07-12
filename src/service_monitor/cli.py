@@ -103,3 +103,4 @@ def main():
 
         logger.info("Found {count} urls to process!".format(count=len(urls)))
         serve(urls, options)
+        monitor.start(urls, options.interval)
