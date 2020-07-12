@@ -70,6 +70,7 @@ def main():
     if options.log_level:
         logging.basicConfig(stream=sys.stdout, level=LOG_LEVELS[options.log_level])
 
+    storage.create_table()
     if not options.csv:
         logger.error("Please provide a valid csv file")
         return
