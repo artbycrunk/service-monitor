@@ -1,4 +1,7 @@
+
 import argparse
+from collections import OrderedDict
+import csv
 import logging
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,39 @@ def parse_args():
 
     return parser.parse_args()
 
+
+def get_csv_data(filename):
+    """CSV to Dict reader, skip duplicate entries.
+
+    Arguments:
+        filename(str): path to csv file.
+
+    Returns:
+        Dict: [id] -> [pos, name, url]
+
+    """
+    urls = OrderedDict()
+
+    if not os.path.exists(filename):
+        logger.error("Not a valid csv file: {0}".format(filename))
+        return urls
+
+    with open(filename, mode='r') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count == 0 and row[0] == "name":
+                line_count += 1
+                continue
+            if not row[1]:
+                line_count += 1
+                continue
+            clean_row = [_row.strip() for _row in row]
+            _id = ":".join(clean_row)  # keys are unique rows
+            urls[_id] = [line_count] + clean_row
+            line_count += 1
+    return urls
+
 def main():
     """Main function."""
 
@@ -34,3 +70,11 @@ def main():
     if options.log_level:
         logging.basicConfig(stream=sys.stdout, level=LOG_LEVELS[options.log_level])
 
+    if not options.csv:
+        logger.error("Please provide a valid csv file")
+        return
+
+    urls = get_csv_data(options.csv)
+    if urls:
+        options.interval = 60 * int(options.interval)
+        logger.info("Current interval is set at {0}".format(options.interval))
