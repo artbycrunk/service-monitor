@@ -49,3 +49,26 @@ def create_table():
     except Error as e:
         logger.error(e)
 
+
+def insert_row(name, url, status, pos):
+    """Add a row to the db based on given info.
+
+    Arguments:
+        name(str): name associated with the url.
+        url(str): the url to check.
+        status(str): the response code
+        pos(int): the pos of the url in relatioon to the csv.
+
+    """
+    conn = get_connection()
+    insert_query = """
+        INSERT INTO 'status' ('name', 'url', 'status', 'pos')
+        VALUES (?, ?, ?, ?);"""
+    data_tuple = (name, url, status, pos)
+    try:
+        c = conn.cursor()
+        c.execute(insert_query, data_tuple)
+        conn.commit()
+    except Error as e:
+        logger.error(e)
+
