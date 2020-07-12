@@ -72,3 +72,22 @@ def insert_row(name, url, status, pos):
     except Error as e:
         logger.error(e)
 
+
+def get_summary(metric_span=1):
+    """Query records based on a given metric span
+
+    Arguments:
+        metric_span(int): time in hours to look back from now for valid records.
+
+    Returns:
+        list: Fetched records based on query.
+
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    summary_query = """SELECT pos, name, url, group_concat(status), group_concat(timestamp)
+        FROM status WHERE (timestamp >= datetime('now', '-{0} hour'))
+        GROUP BY name, url ORDER BY pos""".format(metric_span)
+    logger.debug(summary_query)
+    cursor.execute(summary_query, ())
+    return cursor.fetchall()
