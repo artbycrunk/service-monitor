@@ -6,6 +6,8 @@ services:
     build:
         context: ./
         dockerfile: ./Dockerfile
+    dns:
+      - 1.1.1.1
     ports:
         - 8080:8080
     command: /usr/local/bin/service-monitor ./example/sample.csv --log-level DEBUG
