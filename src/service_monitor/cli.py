@@ -3,6 +3,12 @@ import argparse
 from collections import OrderedDict
 import csv
 import logging
+import multiprocessing
+import os
+import sys
+
+from . import storage, summary, monitor
+
 logger = logging.getLogger(__name__)
 
 LOG_LEVELS = {
@@ -62,6 +68,21 @@ def get_csv_data(filename):
             line_count += 1
     return urls
 
+
+def serve(urls, options):
+    """Serve summary via a http server, using multiprocessing.
+
+    Arguments:
+        urls(dict): dict converted from csv.
+        options(object): options passed to the service.
+
+    """
+    process = multiprocessing.Process(
+        target=summary.serve_forever, args=(urls, options))
+    process.daemon = True
+    process.start()
+
+
 def main():
     """Main function."""
 
@@ -79,3 +100,6 @@ def main():
     if urls:
         options.interval = 60 * int(options.interval)
         logger.info("Current interval is set at {0}".format(options.interval))
+
+        logger.info("Found {count} urls to process!".format(count=len(urls)))
+        serve(urls, options)
