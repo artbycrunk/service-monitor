@@ -1,7 +1,5 @@
 import asyncio
-import functools
 import logging
-import signal
 import time
 
 import aiohttp
@@ -42,6 +40,21 @@ async def get(session, pos, name, url):
         return False
     return True
 
+
+def sleep(interval):
+    """Sleep helper
+
+    Arguments:
+        interval(int): time to sleep in seconds
+
+    """
+    start_time = time.time()
+    logger.info("Sleeping for {0}s".format(interval))
+    time.sleep(interval)
+    end_time = time.time() - start_time
+    logger.info("Ready to restart after sleeping for {0}s".format(end_time))
+
+
 def process(urls, interval):
     """Fetch all urls at a given interval.
 
@@ -66,6 +79,7 @@ def process(urls, interval):
                     tasks.append(asyncio.ensure_future(get(session, pos, name, url)))
 
                 loop.run_until_complete(asyncio.gather(*tasks))
+                sleep(interval)
             except KeyboardInterrupt:
                 loop_forever = False
     except Exception as e:
