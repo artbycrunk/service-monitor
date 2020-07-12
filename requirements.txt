@@ -1,0 +1,3 @@
+argparse
+aiohttp==3.6.2
+jinja2
