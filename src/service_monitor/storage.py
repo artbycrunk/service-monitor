@@ -87,7 +87,9 @@ def get_summary(metric_span=1):
     cursor = conn.cursor()
     summary_query = """SELECT pos, name, url, group_concat(status), group_concat(timestamp)
         FROM status WHERE (timestamp >= datetime('now', '-{0} hour'))
-        GROUP BY name, url ORDER BY pos""".format(metric_span)
+        GROUP BY name, url ORDER BY pos""".format(
+        metric_span
+    )
     logger.debug(summary_query)
     cursor.execute(summary_query, ())
     return cursor.fetchall()

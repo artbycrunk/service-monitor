@@ -25,8 +25,9 @@ setup(
     license="MIT",
     url="https://github.com/artbycrunk/service-monitor",
     # packages=setuptools.find_packages(),
+    # packages=find_packages(where="src"),
     package_dir={"": "src"},
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -40,8 +41,6 @@ setup(
     ],
     packages=find_packages("src"),
     entry_points={
-        "console_scripts": [
-            "service-monitor = service_monitor.cli:main"
-        ]
-    }
+        "console_scripts": ["service-monitor = service_monitor.cli:main"]
+    },
 )

@@ -1,5 +1,9 @@
 import logging
 import time
+from dataclasses import dataclass
+from typing import List
+
+from attr import dataclass
 
 from aiohttp import web
 from jinja2 import Template
@@ -7,6 +11,9 @@ from jinja2 import Template
 from . import storage
 
 logger = logging.getLogger(__name__)
+
+from typing import List
+from datetime import datetime
 
 TEMPLATE = """
 <html>
@@ -62,6 +69,15 @@ TEMPLATE = """
 </html>
 """
 
+@dataclass
+class SummaryRow(object):
+    # [pos, name, url, statuses, timestamp]
+    pos: int
+    name: str
+    url: str
+    statuses: List[str]
+    timestamp: List[datetime]
+
 
 def serve_forever(urls, options):
     """Start an async web server, adding the summary handler.
@@ -75,7 +91,57 @@ def serve_forever(urls, options):
     app['urls'] = urls
     app['options'] = options
     app.add_routes([web.get('/', summary)])
+    app.add_routes([web.get('/stats', stats)])
     web.run_app(app)
+
+
+def get_summary_rows(metric_span: int) -> List[SummaryRow]:
+    """Return summary rows """
+    rows = list()
+    start_time = time.time()
+    try:
+        for row in storage.get_summary(metric_span=metric_span):
+            pos, name, url, status, timestamp = row
+            statuses = status.split(",")
+            timestamp = timestamp.split(",")
+            rows.append(SummaryRow(pos=pos, name=name, url=url, statuses=statuses, timestamp=timestamp))
+    except Exception as e:
+        logger.error("ERROR {0}".format(str(e)))
+    finally:
+        endtime = time.time() - start_time
+        logger.info("Summary built in {time}".format(time=endtime))
+    return rows
+
+
+def get_stats(rows: List[SummaryRow]):
+    """Get statistics on given rows"""
+    response = {}
+    for row in rows:
+        # each row is a unique url.
+        check_per_url = len(row.statuses)  # 3 is the statuses
+        passed_check, failed_check = 0, 0
+        for x in row.statuses:
+            if x == '200':
+                passed_check += 1
+            else:
+                failed_check += 1
+        percent_failed = (failed_check / check_per_url) * 100
+        response[row.pos] = {
+            "url": row.url,
+            "total_checks": check_per_url,
+            "passed_checks": passed_check,
+            "failed_checks": failed_check,
+            "failed_checks_percent": round(percent_failed)
+        }
+    return response
+
+
+async def stats(request):
+    """Get the stats of previously monitored requests."""
+    rows = get_summary_rows(1)
+    response = get_stats(rows)
+
+    return web.json_response(response)
 
 
 async def summary(request):
@@ -85,22 +151,8 @@ async def summary(request):
         request(obj): aiohttp.Request
 
     """
-    start_time = time.time()
     metric_span = request.app["options"].metric_span
-    rows = list()
-    try:
-        for row in storage.get_summary(metric_span=metric_span):
-            pos, name, url, status, timestamp = row
-            statuses = status.split(",")
-            timestamp = timestamp.split(",")
-            rows.append([pos, name, url, statuses, timestamp])
-    except Exception as e:
-        logger.error("ERROR {0}".format(str(e)))
-    finally:
-        endtime = time.time() - start_time
-
-    logger.info("Summary built in {time}".format(time=endtime))
-
+    rows = get_summary_rows(metric_span)
     if ("json" in request.query
             or request.content_type == "application/json"):
         res = {}

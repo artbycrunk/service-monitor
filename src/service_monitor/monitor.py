@@ -9,10 +9,10 @@ from . import storage
 logger = logging.getLogger(__name__)
 
 headers = {
-    'user-agent': (
-        'Mozilla/5.0 (Windows NT 6.3; Win64; x64) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/52.0.2743.60 Safari/537.36'
+    "user-agent": (
+        "Mozilla/5.0 (Windows NT 6.3; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/52.0.2743.60 Safari/537.36"
     )
 }
 
@@ -31,12 +31,12 @@ async def get(session, pos, name, url):
 
     """
     try:
-        resp = await session.request('HEAD', url)
+        resp = await session.request("HEAD", url)
         storage.insert_row(name, url, resp.status, pos)
         logger.debug("{0} {1} {2} {3}".format(pos, name, url, resp.status))
     except Exception:
-        storage.insert_row(name, url, 'FAIL', pos)
-        logger.debug("{0} {1} {2} {3}".format(pos, name, url, 'FAIL'))
+        storage.insert_row(name, url, "FAIL", pos)
+        logger.debug("{0} {1} {2} {3}".format(pos, name, url, "FAIL"))
         return False
     return True
 
@@ -69,14 +69,18 @@ def process(urls, interval):
 
         conn = aiohttp.TCPConnector(verify_ssl=False, limit_per_host=2)
         timeout = aiohttp.ClientTimeout(total=5)
-        session = aiohttp.ClientSession(connector=conn, headers=headers, timeout=timeout)
+        session = aiohttp.ClientSession(
+            connector=conn, headers=headers, timeout=timeout
+        )
 
         while loop_forever:
             try:
                 tasks = list()
                 for _, value in urls.items():
                     pos, name, url = value
-                    tasks.append(asyncio.ensure_future(get(session, pos, name, url)))
+                    tasks.append(
+                        asyncio.ensure_future(get(session, pos, name, url))
+                    )
 
                 loop.run_until_complete(asyncio.gather(*tasks))
                 sleep(interval)
